@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/schema",
+    "id": "",
+    "title": "",
+    "type": "object",
+    "properties": {
+        "entity": {
+            "type": "string",
+            "description": "Entity interface.",
+            "alias": "e"
+        },
+        "project": {
+            "type": "string",
+            "description": "The name of the project.",
+            "$default": {
+                "$source": "projectName"
+            }
+        },
+        "module": {
+            "type": "string",
+            "description": "Allows specification of the declaring module.",
+            "alias": "m"
+        }
+    },
+    "required": [
+        "entity"
+    ]
+}
