@@ -47,7 +47,7 @@ export default function (_options: MyFirstSchemaOptions): Rule {
         mergeWith(templateSource)
       ]),
     );
-
+// ng g my-first-schema:my-first-schema --project app1 --module App -e "{id: number, name: string}"
     const tree$ = <Observable<Tree>>rule(tree, _context);
     tree$.subscribe((t: Tree) => {
       // FileEntry
