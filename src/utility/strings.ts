@@ -44,7 +44,6 @@ export function decamelize(str: string): string {
  @return {String} the dasherized string.
  */
 export function dasherize(str: string): string {
-  console.log('dasherize', str);
   return decamelize(str).replace(STRING_DASHERIZE_REGEXP, '-');
 }
 

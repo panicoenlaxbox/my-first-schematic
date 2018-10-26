@@ -4,6 +4,11 @@
     "title": "",
     "type": "object",
     "properties": {
+        "name": {
+            "type": "string",
+            "description": "Entity name.",
+            "alias": "n"
+        },
         "entity": {
             "type": "string",
             "description": "Entity interface.",
@@ -23,6 +28,7 @@
         }
     },
     "required": [
+        "name",
         "entity"
     ]
 }
