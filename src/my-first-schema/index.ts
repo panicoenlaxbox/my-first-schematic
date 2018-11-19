@@ -1,4 +1,4 @@
-import { Rule, SchematicContext, Tree, SchematicsException, apply, noop, filter, template, move, url, chain, mergeWith, branchAndMerge, FileEntry, Action } from '@angular-devkit/schematics';
+import { Rule, SchematicContext, Tree, SchematicsException, apply, noop, filter, template, move, url, chain, mergeWith, branchAndMerge, FileEntry, Action, UpdateRecorder } from '@angular-devkit/schematics';
 import { Schema as MyFirstSchemaOptions } from './schema';
 import { getProject, buildDefaultPath } from '../utility/project';
 import { findModuleFromOptions } from '../utility/find-module';
@@ -7,10 +7,49 @@ import { parseName } from '../utility/parse-name';
 import { dirname, Path } from '@angular-devkit/core';
 import { camelize } from '../utility/strings';
 import { Observable } from 'rxjs';
+import * as os from 'os';
 
-function sergio(): string {
-  return 'panicoenlaxbox';
+function insertStringAtBeginning(content: string, insertString: string): string {
+  return insertString + content;
 }
+
+function insertStringAt(content: string, searchString: string, insertString: string): string {
+  const position = content.indexOf(searchString) + searchString.length;
+  content = [content.slice(0, position), insertString, content.slice(position)].join('');
+  return content;
+}
+
+function insertStringAtEnding(content: string, insertString: string): string {
+  return content + insertString;
+}
+
+function saveEffectsIndexFile(_options: MyFirstSchemaOptions, tree: Tree) {
+      const path = `${_options.modulePath}/store/effects/index.ts`;
+
+      // const updateRecorder: UpdateRecorder = tree.beginUpdate(path);
+      // updateRecorder.insertLeft(0, `import { ${strings.classify(_options.name)}Effects } from \'./${strings.dasherize(_options.name)}.effects\';${os.EOL}`);
+      // tree.commitUpdate(updateRecorder);
+  
+      const buffer: Buffer | null = tree.read(path);
+      if (buffer !== null) {
+        let content: string = buffer.toString();
+        content = insertStringAtBeginning(content, `import { ${strings.classify(_options.name)}Effects } from \'./${strings.dasherize(_options.name)}.effects\';${os.EOL}`);
+        content = insertStringAt(content, 'export const Effects = [', `${os.EOL}    ${strings.classify(_options.name)}Effects,`);
+        tree.overwrite(path, content);
+      }
+}
+
+function saveReducersIndexFile(_options: MyFirstSchemaOptions, tree: Tree) {
+  const path = `${_options.modulePath}/store/reducers/index.ts`;
+  const buffer: Buffer | null = tree.read(path);
+  if (buffer !== null) {
+    let content: string = buffer.toString();
+    content = insertStringAtBeginning(content, `import { ${strings.classify(_options.name)}Effects } from \'./${strings.dasherize(_options.name)}.effects\';${os.EOL}`);
+    content = insertStringAt(content, 'export const Effects = [', `${os.EOL}    ${strings.classify(_options.name)}Effects,`);
+    tree.overwrite(path, content);
+  }
+}
+
 export default function (_options: MyFirstSchemaOptions): Rule {
   return (tree: Tree, _context: SchematicContext) => {
     if (!_options.project) {
@@ -33,6 +72,10 @@ export default function (_options: MyFirstSchemaOptions): Rule {
 
     console.log(_options);
 
+    saveEffectsIndexFile(_options, tree);
+
+    saveReducersIndexFile(_options, tree);
+
     const templateSource = apply(url('./files'), [
       template({
         ...strings,
@@ -46,20 +89,22 @@ export default function (_options: MyFirstSchemaOptions): Rule {
         mergeWith(templateSource)
       ]),
     );
+
     // ng g my-first-schema:my-first-schema --project app1 --module Crm -n example -e "{ id: number; name: string; }" --dry-run
     const tree$ = <Observable<Tree>>rule(tree, _context);
     tree$.subscribe((t: Tree) => {
       t.actions.forEach((action: Action, index: number, actions: Action[]) => {
         console.log(action.kind, action.path, action.id, action.path);
-        if (action.kind === 'c') {
+        if (
+          // action.kind === 'c' || // added file
+          action.kind === 'o' // modified file
+        ) {
           dumpFile(t, action.path);
         }
       });
       // t.visit((path: Path, entry?: Readonly<FileEntry> | null) => {
       //   console.log(path);
       // });
-      // FileEntry
-      const name = strings.dasherize(_options.name);
       // dumpFile(t, `src/app/models/${name}/${name}.model.ts`);
       // dumpFile(t, `src/app/models/${name}/${name}-request.model.ts`);
       // dumpFile(t, `src/app/models/${name}/${name}-response.model.ts`);
