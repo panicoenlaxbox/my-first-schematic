@@ -46,7 +46,7 @@ export default function (_options: MyFirstSchemaOptions): Rule {
         mergeWith(templateSource)
       ]),
     );
-    // ng g my-first-schema:my-first-schema --project app1 --module Crm -n example -e "{ id: number, name: string }" --dry-run
+    // ng g my-first-schema:my-first-schema --project app1 --module Crm -n example -e "{ id: number; name: string; }" --dry-run
     const tree$ = <Observable<Tree>>rule(tree, _context);
     tree$.subscribe((t: Tree) => {
       t.actions.forEach((action: Action, index: number, actions: Action[]) => {

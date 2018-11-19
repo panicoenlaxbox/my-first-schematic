@@ -1,2 +1,1 @@
-export interface <%=classify(name) %>
-<%=entity%>
+export interface <%=classify(name) %> <%=entity%>

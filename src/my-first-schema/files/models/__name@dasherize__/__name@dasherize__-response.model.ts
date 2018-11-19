@@ -1,5 +1,5 @@
-import { RequestBase } from '../request-base';
+import { <%=classify(name) %> } from './<%=dasherize(name) %>.model';
+import { ResponseBase } from '../response-base';
 
-// tslint:disable-next-line:no-empty-interface
-export interface <%=classify(name) %>Response extends RequestBase {
+export interface <%=classify(name) %>Response extends ResponseBase<<%=classify(name) %>> {
 }
