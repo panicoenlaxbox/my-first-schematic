@@ -5,4 +5,5 @@ export interface Schema {
     path?: string;
     name: string;
     modulePath: string;
+    moduleName: string;
 }

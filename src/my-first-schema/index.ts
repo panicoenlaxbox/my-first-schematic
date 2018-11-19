@@ -8,44 +8,53 @@ import { dirname, Path } from '@angular-devkit/core';
 import { camelize } from '../utility/strings';
 import { Observable } from 'rxjs';
 import * as os from 'os';
+import { insertImport } from '../utility/ast-utils';
+import * as ts from 'typescript';
 
-function insertStringAtBeginning(content: string, insertString: string): string {
-  return insertString + content;
+function insertAtBeginning(content: string, value: string, eol: boolean = true): string {
+  return value + (eol ? os.EOL : '') + content;
 }
 
-function insertStringAt(content: string, searchString: string, insertString: string): string {
-  const position = content.indexOf(searchString) + searchString.length;
-  content = [content.slice(0, position), insertString, content.slice(position)].join('');
-  return content;
+function insertAtSearch(content: string, search: string, value: string, eol: boolean = true): string {
+  const position = content.indexOf(search) + search.length;
+  return [content.slice(0, position), value + (eol ? os.EOL : ''), content.slice(position)].join('');
 }
 
-function insertStringAtEnding(content: string, insertString: string): string {
-  return content + insertString;
+function insertAtEnding(content: string, value: string, eol: boolean = true): string {
+  return content + (eol ? os.EOL : '') + value + os.EOL;
 }
 
 function saveEffectsIndexFile(_options: MyFirstSchemaOptions, tree: Tree) {
-      const path = `${_options.modulePath}/store/effects/index.ts`;
+  const path = `${_options.modulePath}/store/effects/index.ts`;
+  const buffer: Buffer | null = tree.read(path);
+  if (buffer !== null) {
+    let content: string = buffer.toString();
+    content = insertAtBeginning(content, `import { ${strings.classify(_options.name)}Effects } from \'./${strings.dasherize(_options.name)}.effects\';`);
+    content = insertAtSearch(content, `export const Effects = [${os.EOL}`, `${' '.repeat(4)}${strings.classify(_options.name)}Effects,`);
+    tree.overwrite(path, content);
+  }
+}
 
-      // const updateRecorder: UpdateRecorder = tree.beginUpdate(path);
-      // updateRecorder.insertLeft(0, `import { ${strings.classify(_options.name)}Effects } from \'./${strings.dasherize(_options.name)}.effects\';${os.EOL}`);
-      // tree.commitUpdate(updateRecorder);
-  
-      const buffer: Buffer | null = tree.read(path);
-      if (buffer !== null) {
-        let content: string = buffer.toString();
-        content = insertStringAtBeginning(content, `import { ${strings.classify(_options.name)}Effects } from \'./${strings.dasherize(_options.name)}.effects\';${os.EOL}`);
-        content = insertStringAt(content, 'export const Effects = [', `${os.EOL}    ${strings.classify(_options.name)}Effects,`);
-        tree.overwrite(path, content);
-      }
+function getTypescriptSourceFile(tree: Tree, path: string): ts.SourceFile {
+  const buffer = tree.read(path);
+  if (!buffer) {
+    throw new SchematicsException(`Could not find ${path}.`);
+  }
+  const content = buffer.toString();
+  const source = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, true);
+  return source;
 }
 
 function saveReducersIndexFile(_options: MyFirstSchemaOptions, tree: Tree) {
   const path = `${_options.modulePath}/store/reducers/index.ts`;
+  // let source = getTypescriptSourceFile(tree, path);
   const buffer: Buffer | null = tree.read(path);
   if (buffer !== null) {
     let content: string = buffer.toString();
-    content = insertStringAtBeginning(content, `import { ${strings.classify(_options.name)}Effects } from \'./${strings.dasherize(_options.name)}.effects\';${os.EOL}`);
-    content = insertStringAt(content, 'export const Effects = [', `${os.EOL}    ${strings.classify(_options.name)}Effects,`);
+    content = insertAtBeginning(content, `import * as from${strings.classify(_options.name)} from \'./${strings.dasherize(_options.name)}.reducer\';`);
+    content = insertAtSearch(content, `export interface ${strings.classify(_options.moduleName)}State {${os.EOL}`, `${' '.repeat(4)}${strings.camelize(_options.name)}: from${strings.classify(_options.name)}.State;`);
+    content = insertAtSearch(content, `export const reducers: ActionReducerMap<${strings.classify(_options.moduleName)}State> = {${os.EOL}`, `    ${strings.camelize(_options.name)}: from${strings.classify(_options.name)}.${strings.camelize(_options.name)}Reducer,`);
+    content = insertAtEnding(content, `export const get${strings.classify(_options.name)}State = createSelector(get${strings.classify(_options.moduleName)}State, (state: ${strings.classify(_options.moduleName)}State) => state.${strings.camelize(_options.name)});`);
     tree.overwrite(path, content);
   }
 }
@@ -61,13 +70,14 @@ export default function (_options: MyFirstSchemaOptions): Rule {
     // get {sourceRoot}/app from angular.json
     _options.path = buildDefaultPath(project);
     // get ts module file specified in command line
+    let moduleName: string | undefined = _options.module;
     _options.module = findModuleFromOptions(tree, _options);
     if (_options.module === undefined) {
       throw new SchematicsException('Option module is required.');
-
     }
     _options.module = _options.module.toLowerCase();
     _options.modulePath = dirname(_options.module as Path);
+    _options.moduleName = moduleName as string;
     _options.name = camelize(_options.name);
 
     console.log(_options);
@@ -94,12 +104,12 @@ export default function (_options: MyFirstSchemaOptions): Rule {
     const tree$ = <Observable<Tree>>rule(tree, _context);
     tree$.subscribe((t: Tree) => {
       t.actions.forEach((action: Action, index: number, actions: Action[]) => {
-        console.log(action.kind, action.path, action.id, action.path);
+        // console.log(action.kind, action.path, action.id, action.path);
         if (
-          // action.kind === 'c' || // added file
+          action.kind === 'c' || // added file
           action.kind === 'o' // modified file
         ) {
-          dumpFile(t, action.path);
+          // dumpFile(t, action.path);
         }
       });
       // t.visit((path: Path, entry?: Readonly<FileEntry> | null) => {

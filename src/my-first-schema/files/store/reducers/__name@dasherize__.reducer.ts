@@ -21,7 +21,7 @@ const initialState: State = {
     error: null
 };
 
-export function customersReducer(state = initialState, action: from<%=classify(name) %>.<%=classify(name) %>Actions): State {
+export function <%=camelize(name) %>Reducer(state = initialState, action: from<%=classify(name) %>.<%=classify(name) %>Actions): State {
     switch (action.type) {
         case from<%=classify(name) %>.LOAD_<%=name.toUpperCase() %>:
             return {
