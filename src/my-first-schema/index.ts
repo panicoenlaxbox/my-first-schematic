@@ -1,4 +1,4 @@
-import { Rule, SchematicContext, Tree, SchematicsException, apply, noop, filter, template, move, url, chain, mergeWith, branchAndMerge, FileEntry } from '@angular-devkit/schematics';
+import { Rule, SchematicContext, Tree, SchematicsException, apply, noop, filter, template, move, url, chain, mergeWith, branchAndMerge, FileEntry, Action } from '@angular-devkit/schematics';
 import { Schema as MyFirstSchemaOptions } from './schema';
 import { getProject, buildDefaultPath } from '../utility/project';
 import { findModuleFromOptions } from '../utility/find-module';
@@ -36,8 +36,7 @@ export default function (_options: MyFirstSchemaOptions): Rule {
     const templateSource = apply(url('./files'), [
       template({
         ...strings,
-        ..._options,
-        sergio,
+        ..._options
       }),
       move(_options.modulePath)
     ]);
@@ -47,17 +46,33 @@ export default function (_options: MyFirstSchemaOptions): Rule {
         mergeWith(templateSource)
       ]),
     );
-// ng g my-first-schema:my-first-schema --project app1 --module App -e "{id: number, name: string}"
+    // ng g my-first-schema:my-first-schema --project app1 --module Crm -n example -e "{ id: number, name: string }" --dry-run
     const tree$ = <Observable<Tree>>rule(tree, _context);
     tree$.subscribe((t: Tree) => {
+      t.actions.forEach((action: Action, index: number, actions: Action[]) => {
+        console.log(action.kind, action.path, action.id, action.path);
+        if (action.kind === 'c') {
+          dumpFile(t, action.path);
+        }
+      });
+      // t.visit((path: Path, entry?: Readonly<FileEntry> | null) => {
+      //   console.log(path);
+      // });
       // FileEntry
-      const fileEntry: FileEntry | null = t.get('src/app/crm/models/payment-method/payment-method.model.ts');
-      if (fileEntry !== null) {
-        console.log(fileEntry.path);
-        console.log(fileEntry.content.toString());
-      }
+      const name = strings.dasherize(_options.name);
+      // dumpFile(t, `src/app/models/${name}/${name}.model.ts`);
+      // dumpFile(t, `src/app/models/${name}/${name}-request.model.ts`);
+      // dumpFile(t, `src/app/models/${name}/${name}-response.model.ts`);
     });
 
     return rule;
   };
+
+  function dumpFile(tree: Tree, path: string): void {
+    const fileEntry: FileEntry | null = tree.get(path);
+    if (fileEntry !== null) {
+      // console.log(fileEntry.path);
+      console.log(fileEntry.content.toString());
+    }
+  }
 }

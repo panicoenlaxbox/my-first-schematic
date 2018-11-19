@@ -1,3 +1,2 @@
-export interface <%=name %> {
-<%=sergio() %>
-}
+export interface <%=classify(name) %>
+<%=entity%>
