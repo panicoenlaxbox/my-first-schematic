@@ -24,7 +24,7 @@ function insertAtEnding(content: string, value: string, eol: boolean = true): st
   return content + (eol ? os.EOL : '') + value + os.EOL;
 }
 
-function saveEffectsIndexFile(_options: MyFirstSchemaOptions, tree: Tree) {
+function updateEffectsBarrel(_options: MyFirstSchemaOptions, tree: Tree) {
   const path = `${_options.modulePath}/store/effects/index.ts`;
   const buffer: Buffer | null = tree.read(path);
   if (buffer !== null) {
@@ -45,7 +45,7 @@ function getTypescriptSourceFile(tree: Tree, path: string): ts.SourceFile {
   return source;
 }
 
-function saveReducersIndexFile(_options: MyFirstSchemaOptions, tree: Tree) {
+function updateReducersBarrel(_options: MyFirstSchemaOptions, tree: Tree) {
   const path = `${_options.modulePath}/store/reducers/index.ts`;
   // let source = getTypescriptSourceFile(tree, path);
   const buffer: Buffer | null = tree.read(path);
@@ -82,9 +82,9 @@ export default function (_options: MyFirstSchemaOptions): Rule {
 
     console.log(_options);
 
-    saveEffectsIndexFile(_options, tree);
+    updateEffectsBarrel(_options, tree);
 
-    saveReducersIndexFile(_options, tree);
+    updateReducersBarrel(_options, tree);
 
     const templateSource = apply(url('./files'), [
       template({
